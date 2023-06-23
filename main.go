@@ -15,8 +15,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-
-
 type KeyPaths struct {
 	PrivateKeyPath string `json:"private_key_path"`
 	PublicKeyPath  string `json:"public_key_path"`
@@ -43,6 +41,7 @@ func GenerateRandomString(length int) string {
 func main() {
 	// Parse the command-line flags
 	prefix := flag.String("prefix", "giantcloak", "Prefix to replace 'giantcloak' in fname")
+	keySize := flag.Int("size", 2048, "Size of the RSA key in bits")
 	flag.Parse()
 
 	// Create the directory if it doesn't exist
@@ -52,8 +51,8 @@ func main() {
 		return
 	}
 
-	// Generate a new RSA key pair
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// Generate a new RSA key pair with the specified key size
+	privateKey, err := rsa.GenerateKey(rand.Reader, *keySize)
 	if err != nil {
 		fmt.Println("Failed to generate key pair:", err)
 		return
