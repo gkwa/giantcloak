@@ -15,6 +15,7 @@ import (
 type KeyPaths struct {
 	PrivateKeyPath string `json:"private_key_path"`
 	PublicKeyPath  string `json:"public_key_path"`
+	KeyName        string `json:"key_name"`
 	PrivateKey     string `json:"private_key"`
 	PublicKey      string `json:"public_key"`
 	Suffix         string `json:"suffix"`
@@ -101,6 +102,7 @@ func main() {
 		PublicKey:      filepath.Base(publicKeyPath),
 		KeyType:        "ed25519",
 		Created:        time.Now().UTC().Unix(),
+		KeyName:        fmt.Sprintf("id_%s_%s_%s", "ed25519", *prefix, randomString),
 	}
 
 	jsonData, err := json.MarshalIndent(keyPaths, "", "  ")
