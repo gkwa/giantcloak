@@ -1,16 +1,21 @@
 package main
 
 import (
-	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/hex"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 )
+
+
 
 type KeyPaths struct {
 	PrivateKeyPath string `json:"private_key_path"`
@@ -47,23 +52,23 @@ func main() {
 		return
 	}
 
-	// Generate a new Ed25519 key pair
-	privateKey, publicKey, err := ed25519.GenerateKey(rand.Reader)
+	// Generate a new RSA key pair
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		fmt.Println("Failed to generate key pair:", err)
 		return
 	}
 
-	// Convert the private key to hex format
-	privateKeyHex := hex.EncodeToString(privateKey)
+	// Convert the private key to PEM format
+	privateKeyBytes := encodePrivateKeyToPEM(privateKey)
 
-	// Convert the public key to hex format
-	publicKeyHex := hex.EncodeToString(publicKey)
+	// Convert the public key to OpenSSH public key format
+	publicKeyBytes := encodePublicKeyToOpenSSH(privateKey.PublicKey)
 
 	randomString := GenerateRandomString(5)
 	fmt.Println(randomString)
 
-	fname := fmt.Sprintf("id_ed25519_%s_%s", *prefix, randomString)
+	fname := fmt.Sprintf("id_rsa_%s_%s", *prefix, randomString)
 
 	// Write the private key to a file
 	privateKeyPath := filepath.Join(dir, fname)
@@ -73,7 +78,7 @@ func main() {
 		return
 	}
 	defer privateKeyFile.Close()
-	if _, err := privateKeyFile.WriteString(privateKeyHex); err != nil {
+	if _, err := privateKeyFile.Write(privateKeyBytes); err != nil {
 		fmt.Println("Failed to write private key to file:", err)
 		return
 	}
@@ -87,9 +92,7 @@ func main() {
 	}
 	defer publicKeyFile.Close()
 
-	text := fmt.Sprintf("ssh-ed25519 %s giantcloak\n", publicKeyHex)
-
-	if _, err := publicKeyFile.WriteString(text); err != nil {
+	if _, err := publicKeyFile.Write(publicKeyBytes); err != nil {
 		fmt.Println("Failed to write public key to file:", err)
 		return
 	}
@@ -103,9 +106,9 @@ func main() {
 		Suffix:         randomString,
 		PrivateKey:     filepath.Base(privateKeyPath),
 		PublicKey:      filepath.Base(publicKeyPath),
-		KeyType:        "ed25519",
+		KeyType:        "rsa",
 		Created:        time.Now().UTC().Unix(),
-		KeyName:        fmt.Sprintf("id_%s_%s_%s", "ed25519", *prefix, randomString),
+		KeyName:        fmt.Sprintf("id_%s_%s_%s", "rsa", *prefix, randomString),
 	}
 
 	jsonData, err := json.MarshalIndent(keyPaths, "", "  ")
@@ -128,4 +131,24 @@ func main() {
 	}
 
 	fmt.Println("Key paths written to:", jsonFilePath)
+}
+
+// Encode the RSA private key to PEM format
+func encodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+	return privateKeyPEM
+}
+
+// Encode the RSA public key to OpenSSH public key format
+func encodePublicKeyToOpenSSH(publicKey rsa.PublicKey) []byte {
+	sshPublicKey, err := ssh.NewPublicKey(&publicKey)
+	if err != nil {
+		panic(err)
+	}
+	publicKeyBytes := ssh.MarshalAuthorizedKey(sshPublicKey)
+	return publicKeyBytes
 }
