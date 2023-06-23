@@ -87,7 +87,7 @@ func main() {
 	}
 	defer publicKeyFile.Close()
 
-	text := fmt.Sprintf("ssh-ed25519 %s giantcloak", publicKeyHex)
+	text := fmt.Sprintf("ssh-ed25519 %s giantcloak\n", publicKeyHex)
 
 	if _, err := publicKeyFile.WriteString(text); err != nil {
 		fmt.Println("Failed to write public key to file:", err)
