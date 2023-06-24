@@ -68,7 +68,6 @@ func main() {
 	}
 
 	randomString := GenerateRandomString(5)
-	fmt.Println(randomString)
 
 	fname := fmt.Sprintf("id_rsa_%s_%s", *prefix, randomString)
 
