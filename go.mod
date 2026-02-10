@@ -2,7 +2,7 @@ module github.com/taylormonacelli/giantcloak
 
 go 1.24.0
 
-toolchain go1.25.7
+toolchain go1.26.0
 
 require golang.org/x/crypto v0.47.0
 
